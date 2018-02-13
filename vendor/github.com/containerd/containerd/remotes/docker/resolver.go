@@ -343,6 +343,12 @@ func (r *dockerBase) retryRequest(ctx context.Context, req *http.Request, respon
 					return nil, err
 				}
 				if err := r.setTokenAuth(ctx, c.parameters); err != nil {
+					// NOTE Try a fallback to basic auth since JFrog Artifactory's Docker Registry is buggy
+					if r.username != "" && r.secret != "" {
+						log.G(ctx).Debug("token auth failed, trying fallback to basic auth")
+						r.useBasic = true
+						return copyRequest(req)
+					}
 					return nil, err
 				}
 				return copyRequest(req)
